@@ -1,0 +1,72 @@
+import pandas as pd
+
+visits = pd.read_csv('visits.csv',
+                     parse_dates=[1])
+cart = pd.read_csv('cart.csv',
+                   parse_dates=[1])
+checkout = pd.read_csv('checkout.csv',
+                       parse_dates=[1])
+purchase = pd.read_csv('purchase.csv',
+                       parse_dates=[1])
+
+#print(visits.head(), cart.head(), checkout.head(), purchase.head())
+
+visits_to_cart = pd.merge(visits, cart, how = 'left')
+#print(visits_to_cart)
+num_of_visits = len(visits_to_cart)
+print("Number of visitors: " + str(num_of_visits))
+
+#number of users not proceeding from visits to cart
+not_to_cart = len(visits_to_cart[visits_to_cart.cart_time.isnull()])
+print("Number of visitors not placing order on the cart: " + str(not_to_cart))
+
+#percentage of users not placing order on the cart
+
+not_to_cart_percent = (float(not_to_cart) / num_of_visits) * 100
+print("Percentage of visitors not placing order on the cart: " + str(round(not_to_cart_percent, 2)))
+
+#left merge cart and checkout
+
+cart_to_checkout = pd.merge(cart, checkout, how = 'left')
+num_of_cart = len(cart_to_checkout)
+
+#number of users not procceding from cart to checkout
+not_to_checkout = len(cart_to_checkout[cart_to_checkout.checkout_time.isnull()])
+print("Number of users not proceeding from cart to checkout: " + str(not_to_checkout))
+
+#percentage of users not proceeding to checkout
+
+not_to_checkout_percent = (float(not_to_checkout) / num_of_cart) * 100
+print("Percentage of users not proceeding from cart to checkout: " + str(round(not_to_checkout_percent, 2)))
+
+#Merging 4 tables, as 4 steps of funnel
+all_data = visits.merge(cart, how = "left")\
+  .merge(checkout, how = "left")\
+  .merge(purchase, how = "left")
+
+#percentage of users proceeding to checkout, but not purchasing
+
+
+num_of_checkout = len(all_data[all_data.checkout_time.notnull()])
+
+num_of_purchase = len(all_data[all_data.purchase_time.notnull()])
+
+no_purchase = len(all_data[(all_data.purchase_time.isnull()) & (all_data.checkout_time.notnull())])
+no_purchase_percentage = 100 * float(no_purchase) / num_of_checkout
+print("Percentage of users not proceeding from checkout to purchasing: " + str(no_purchase_percentage))
+
+
+purchasing_percent = (num_of_purchase / num_of_visits) * 100
+not_purchasing_user_percent = (abs(num_of_checkout - num_of_purchase) / num_of_visits) * 100
+
+#print("Percentage of visitors completing purchase (out of total in visits): " + str(round(purchasing_percent, 2)))
+
+# Calculating average time for purchase
+
+all_data["timespan"] = all_data.purchase_time - all_data.visit_time
+#print(all_data)
+
+average_purchase_time = all_data.timespan.mean()
+
+print("Average time from visit to purchasing: " + str(average_purchase_time))
+
