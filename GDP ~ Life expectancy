@@ -1,0 +1,126 @@
+### GOAL: ANALYSE THE RELATIONS BETWEEN COUNTRY GDP AND LIFE EXPECTANCY
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import statsmodels
+import matplotlib.pyplot as plt
+import math
+
+data = pd.read_csv('all_data.csv')
+print(data.head(20))
+
+## getting list of countries
+countries = list(set(data['Country']))
+countries.sort()
+print(countries)
+
+
+
+## number of years
+num_of_years = data['Year'].nunique()
+print(num_of_years)
+
+## max and min life expectancy
+max_leaby = np.max(data['Life expectancy at birth (years)'])
+min_leaby = np.min(data['Life expectancy at birth (years)'])
+print('Maximum life expectancy: ', max_leaby)
+print('Minimum life expectancy: ', min_leaby)
+
+## max and min GDP
+max_GDP = np.max(data['GDP'])
+min_GDP = np.min(data['GDP'])
+print('Maximum GDP: ', max_GDP / 1000000000, 'bln')
+print('Minimum GDP: ', min_GDP / 1000000000, 'bln')
+
+## average GDP by countries 
+
+average_gdp_by_country = data.groupby('Country')['GDP'].mean() / 1e9
+average_gdp_by_country = average_gdp_by_country.reset_index()
+sns.barplot(data=average_gdp_by_country, x='Country', y='GDP')
+plt.yscale('log')
+plt.title('Average GDP by Country (in billion USD)')
+plt.xticks(rotation=30)
+plt.xlabel('Country')
+plt.ylabel('Average GDP logscale (in billion USD)')
+plt.tight_layout()
+plt.show()
+plt.clf()
+
+## GDP change in countries over years
+
+step = 2
+year_names = sorted(list(set(data['Year'])))
+years = range(len(year_names))
+selected_years = year_names[::step]
+
+plt.figure(figsize=(12, 10))
+
+for i, country in enumerate(countries, 1):
+    ax = plt.subplot(2, 3, i)
+    
+    country_data = data[data['Country'] == country].sort_values('Year')
+    
+    ax.plot(country_data['Year'], country_data['GDP'] / 1e9)
+    ax.set_title(f'GDP change in {country}')
+    ax.set_ylabel('GDP (billion USD)')
+    ax.set_xticks(selected_years)
+    ax.set_xticklabels(selected_years, rotation = 30)
+    ax.set_xlabel('Year')
+
+plt.tight_layout()
+plt.show()
+plt.clf()
+
+## life expectancy (LEABY) per country over years
+
+for i, country in enumerate(countries, 1):
+    ax = plt.subplot(3, 2, i)
+    
+    country_data = data[data['Country'] == country].sort_values('Year')
+    
+    ax.plot(country_data['Year'], country_data['Life expectancy at birth (years)'])
+    #ax.set_ylim(40, 95)
+    ax.set_title(f'Life expectancy in {country}')
+    #ax.set_ylabel('Life expectancy (years)')
+    ax.set_xticks(selected_years)
+    ax.set_xticklabels(selected_years, rotation = 30)
+    #ax.set_xlabel('Year')
+
+plt.figtext(0.5, 0.04, 'Year', ha = 'center', va = 'center', fontsize=12)
+plt.figtext(1, 0.5, 'Life expectancy (years)', ha = 'center', va = 'center', rotation='vertical', fontsize=12)
+plt.tight_layout()
+plt.show()
+plt.clf()
+
+## relations between GDP and life expectancy
+
+gdp_min = data['GDP'].min()
+gdp_max = data['GDP'].max()    # billion USD
+"""tick_positions = list(range(int(gdp_min), int(gdp_max)+1, int((gdp_max - gdp_min)/5)))
+tick_labels = [f"{x/1000:.1f}T" for x in tick_positions]  # Converting billion USD to trillion for labels
+
+print(tick_positions)
+print(tick_labels)"""
+
+for i, country in enumerate(countries, 1):
+    ax = plt.subplot(3, 2, i)
+    
+    country_data = data[data['Country'] == country].sort_values('Year')
+    ax.scatter(country_data['GDP'], country_data['Life expectancy at birth (years)'])
+    ax.set_title(f'LEABY~GDP in {country}')
+    #ax.set_xticks(tick_positions)
+    #ax.set_xticklabels(tick_labels, rotation=45)
+    
+plt.figtext(0.5, 0.04, 'GDP', ha = 'center', va = 'center', fontsize=12)
+plt.figtext(1, 0.5, 'Life expectancy (years)', ha = 'center', va = 'center', rotation='vertical', fontsize=12)
+plt.tight_layout()
+plt.show()
+plt.clf()
+
+
+sns.scatterplot(data=data, x='GDP', y='Life expectancy at birth (years)', hue='Country')
+plt.xscale('log')
+plt.show()
+plt.clf()
+
